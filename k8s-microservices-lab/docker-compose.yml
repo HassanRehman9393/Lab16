@@ -1,0 +1,49 @@
+version: '3'
+
+services:
+  blog-api:
+    build: ./services/blog-api
+    container_name: blog-api
+    ports:
+      - "3000:3000"
+    networks:
+      - microservices-network
+    environment:
+      - PORT=3000
+
+  auth-service:
+    build: ./services/auth-service
+    container_name: auth-service
+    ports:
+      - "3001:3001"
+    networks:
+      - microservices-network
+    environment:
+      - PORT=3001
+      - JWT_SECRET=your-secret-key
+
+  analytics-service:
+    build: ./services/analytics-service
+    container_name: analytics-service
+    ports:
+      - "3002:3002"
+    networks:
+      - microservices-network
+    environment:
+      - PORT=3002
+
+  apache-proxy:
+    build: ./apache
+    container_name: apache-proxy
+    ports:
+      - "80:80"
+    networks:
+      - microservices-network
+    depends_on:
+      - blog-api
+      - auth-service
+      - analytics-service
+
+networks:
+  microservices-network:
+    driver: bridge 

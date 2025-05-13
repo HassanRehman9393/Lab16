@@ -1,0 +1,94 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+env:
+  DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
+
+      - name: Login to DockerHub
+        uses: docker/login-action@v2
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+
+      # Build and push blog-api
+      - name: Build and push blog-api
+        uses: docker/build-push-action@v4
+        with:
+          context: ./services/blog-api
+          push: true
+          tags: ${{ secrets.DOCKER_USERNAME }}/blog-api:latest
+
+      # Build and push auth-service
+      - name: Build and push auth-service
+        uses: docker/build-push-action@v4
+        with:
+          context: ./services/auth-service
+          push: true
+          tags: ${{ secrets.DOCKER_USERNAME }}/auth-service:latest
+
+      # Build and push analytics-service
+      - name: Build and push analytics-service
+        uses: docker/build-push-action@v4
+        with:
+          context: ./services/analytics-service
+          push: true
+          tags: ${{ secrets.DOCKER_USERNAME }}/analytics-service:latest
+
+      # Build and push apache-proxy
+      - name: Build and push apache-proxy
+        uses: docker/build-push-action@v4
+        with:
+          context: ./apache
+          push: true
+          tags: ${{ secrets.DOCKER_USERNAME }}/apache-proxy:latest
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+        
+      - name: Install kubectl
+        uses: azure/setup-kubectl@v3
+        with:
+          version: 'latest'
+          
+      - name: Set Kubernetes context
+        uses: azure/k8s-set-context@v2
+        with:
+          kubeconfig: ${{ secrets.KUBE_CONFIG }}
+          
+      - name: Deploy to Kubernetes
+        run: |
+          # Replace placeholder in YAML files with actual Docker username
+          find k8s -type f -name "*.yaml" -exec sed -i "s/\${DOCKER_USERNAME}/${{ secrets.DOCKER_USERNAME }}/g" {} \;
+          
+          # Apply Kubernetes manifests
+          kubectl apply -f k8s/auth-secrets.yaml
+          kubectl apply -f k8s/blog-api-deployment.yaml
+          kubectl apply -f k8s/auth-service-deployment.yaml
+          kubectl apply -f k8s/analytics-service-deployment.yaml
+          kubectl apply -f k8s/apache-proxy-deployment.yaml
+          
+      - name: Verify deployment
+        run: |
+          kubectl get deployments
+          kubectl get pods
+          kubectl get services 

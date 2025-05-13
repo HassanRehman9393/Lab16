@@ -1,0 +1,37 @@
+Title: &quot;Deploy and Scale Microservices on Kubernetes with Apache Reverse Proxy and
+CI/CD&quot;
+
+Objective:
+Create a multi-service app deployed on Kubernetes with Apache acting as a reverse
+proxy and integrate CI/CD using GitHub Actions.
+
+Task Breakdown:
+
+1. Create 2–3 microservices using Node.js (e.g., blog API, auth, and analytics).
+
+2. Containerize the services and create:
+
+Kubernetes Deployments (with autoscaling)
+
+Kubernetes Services (ClusterIP or LoadBalancer)
+
+ConfigMaps or Secrets
+
+3. Install and configure Apache as a reverse proxy (inside a container or on host) to
+forward traffic to services.
+
+4. Implement a CI/CD pipeline using GitHub Actions to:
+
+Build images
+
+Push to Docker Hub
+
+Submission Requirements:
+
+GitHub repo and Docker Hub image links
+
+YAML files and Apache config
+
+Screenshot of services scaling up
+
+Proof of deployment and proxy working (e.g., curl, browser)
